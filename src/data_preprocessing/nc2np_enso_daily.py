@@ -40,6 +40,7 @@ def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[1
 
     # merge daily_sst_box into one xarray ds and load it into RAM
     daily_sst_box = xr.concat(daily_sst_box.values(), 'time').load()
+    daily_sst_box.sortby('time') # with multiprocessing time axis might be not in the right order
 
     # compute anomalies 
     gb = daily_sst_box.groupby('time.dayofyear')
