@@ -14,7 +14,6 @@ from climax.utils.data_utils import DEFAULT_PRESSURE_LEVELS, NAME_TO_VAR
 HOURS_PER_YEAR = 8760  # 365-day year
 DAYS_PER_YEAR = 365
 
-
 def nc2np_daily(path, variables, years, save_dir, partition, num_shards_per_year, aggregation_mode):
     os.makedirs(os.path.join(save_dir, partition), exist_ok=True)
 
@@ -53,7 +52,7 @@ def nc2np_daily(path, variables, years, save_dir, partition, num_shards_per_year
                 # remove the last 24 hours if this year has 366 days
                 # aggreate to daily data, either by just taking one snapshot or by taking a mean
                 if aggregation_mode == "mean":
-                    np_vars[var] = ds[code].resample(time='1D').mean('time').to_numpy[:DAYS_PER_YEAR]
+                    np_vars[var] = ds[code].resample(time='1D').mean('time').to_numpy()[:DAYS_PER_YEAR]
                 elif aggregation_mode == "snapshot":
                     np_vars[var] = ds[code][0:HOURS_PER_YEAR:24].to_numpy()
                 
@@ -142,7 +141,6 @@ def nc2np_daily(path, variables, years, save_dir, partition, num_shards_per_year
         os.path.join(save_dir, partition, "climatology.npz"),
         **climatology,
     )
-
 
 @click.command()
 @click.option("--root_dir", type=click.Path(exists=True))
