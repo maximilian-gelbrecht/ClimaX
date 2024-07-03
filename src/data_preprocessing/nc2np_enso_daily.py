@@ -58,8 +58,8 @@ def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[1
     enso_index_rolling = enso_index_daily.rolling(time=N_days_rolling).mean()
 
     # save 
-    np.savez(os.path.join(save_dir,"enso-rolling-index.npy"), enso_index_rolling.to_numpy())
-    np.savez(os.path.join(save_dir,"enso-rolling-time.npy"), enso_index_rolling['time'].to_numpy())
+    np.save(os.path.join(save_dir,"enso-rolling-index.npy"), enso_index_rolling.to_numpy())
+    np.save(os.path.join(save_dir,"enso-rolling-time.npy"), enso_index_rolling['time'].to_numpy())
 
 @click.command()
 @click.option("--root_dir", type=click.Path(exists=True), default='/p/projects/climate_data_central/reanalysis/ERA5/sst')
