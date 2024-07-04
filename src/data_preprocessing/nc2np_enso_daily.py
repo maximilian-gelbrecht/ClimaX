@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 from tqdm import tqdm
 
-def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[190, 240], lats=[-5, 5], normalize: bool=False):
+def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[190, 240], lats=[-5, 5], normalize: bool=False, name_pattern_year_twice: bool=True):
     """Computes a daily rolling mean ENSO index directly from netCDF Files and saves it as .npz files.
 
     Args:
@@ -17,6 +17,7 @@ def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[1
         lons (list, optional): Longitudes of ENSO box. Defaults to [190, 240].
         lats (list, optional): Latitudes of ENSO box. Defaults to [-5, 5].
         normalize (bool, optional): Normalize the anomalies?. Defaults to False.
+        name_pattern_year_twice (bool, optional): In the name pattern for the nc Files the year appears twice, if not once. Defaults to True
     """
     assert lons[1] > lons[0] 
     assert lats[1] > lats[0]
@@ -32,16 +33,19 @@ def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[1
     for year in tqdm(years):
 
         # get daily SST in ENSO box from hourly ERA5 SST data
-        ps = glob.glob(os.path.join(path, f"*{year}*.nc"))
+        if name_pattern_year_twice:
+            ps = glob.glob(os.path.join(path, f"*{year}*{year}*.nc")) # the pattern with just a single 'year' leads to wrong files being loaded with the naming scheme on PIK HPC
+        else:
+            ps = glob.glob(os.path.join(path, f"*{year}*.nc"))
+
         ds_sst = xr.open_mfdataset(ps, combine="by_coords", parallel=True)
         
-        cropped_ds_sst = ds_sst.sel(latitude=slice(max_lat,min_lat), longitude=slice(min_lon,max_lon))
+        cropped_ds_sst = ds_sst['sst'].sel(latitude=slice(max_lat,min_lat), longitude=slice(min_lon,max_lon))
         daily_sst_box[year] = cropped_ds_sst.resample(time='1D').mean('time')
 
     # merge daily_sst_box into one xarray ds and load it into RAM
     daily_sst_box = xr.concat(daily_sst_box.values(), 'time').load()
-    daily_sst_box.sortby('time') # with multiprocessing time axis might be not in the right order
-
+    
     # compute anomalies 
     gb = daily_sst_box.groupby('time.dayofyear')
     clim = gb.mean(dim='time')
@@ -53,7 +57,7 @@ def nc2np_enso_daily(path: str, save_dir: str, years, N_days_rolling=30, lons=[1
         anom = anom / clim_std
     
     # aggregate to daily index 
-    enso_index_daily = anom['sst'].mean(dim=('latitude', 'longitude'))
+    enso_index_daily = anom.mean(dim=('latitude', 'longitude'))
 
     # rolling mean
     enso_index_rolling = enso_index_daily.rolling(time=N_days_rolling).mean()
