@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt  # not part of the main environment of ClimaX
 import numpy as np 
 import xarray as xr 
 
+# download from https://data.marine.copernicus.eu/product/GLOBAL_OMI_CLIMVAR_enso_sst_area_averaged_anomalies/services
 enso_reference_dataset = 'global_omi_climate-variability_nino34_sst_anom_19930115_P20220427_R19932014.nc'
 
 running_index = np.load('data/enso-rolling-index.npy')
