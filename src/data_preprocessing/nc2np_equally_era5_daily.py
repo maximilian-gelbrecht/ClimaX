@@ -118,7 +118,7 @@ def nc2np_daily(
 
         assert DAYS_PER_YEAR % num_shards_per_year == 0
         num_days_per_shard = DAYS_PER_YEAR // num_shards_per_year
-        for shard_id in range(num_days_per_shard):
+        for shard_id in range(num_shards_per_year):
             start_id = shard_id * num_days_per_shard
             end_id = start_id + num_days_per_shard
             sharded_data = {k: np_vars[k][start_id:end_id] for k in np_vars.keys()}
