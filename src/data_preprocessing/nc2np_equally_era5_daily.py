@@ -61,7 +61,7 @@ def nc2np_daily(
                 if aggregation_mode == "mean":
                     np_vars[var] = dataset[code].resample(time='1D').mean('time').to_numpy()[:DAYS_PER_YEAR]
                 elif aggregation_mode == "snapshot":
-                    np_vars[var] = dataset[code][0:HOURS_PER_YEAR:24].to_numpy()
+                    np_vars[var] = dataset[code][0:24:HOURS_PER_YEAR].to_numpy()
 
                 if (
                     partition == "train"
