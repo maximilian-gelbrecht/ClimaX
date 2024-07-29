@@ -31,9 +31,9 @@ def nc2np_daily(
     constant_fields = ["land_sea_mask", "orography", "lattitude"]
     constant_values = {}
     for f in constant_fields:
-        constant_values[f] = np.expand_dims(
-            constants[NAME_TO_VAR[f]].to_numpy(), axis=(0, 1)
-        ).repeat(HOURS_PER_YEAR, axis=0)
+        constant_values[f] = np.expand_dims(constants[NAME_TO_VAR[f]].to_numpy(), axis=(0, 1)).repeat(
+            DAYS_PER_YEAR, axis=0
+        )
         if partition == "train":
             normalize_mean[f] = constant_values[f].mean(axis=(0, 2, 3))
             normalize_std[f] = constant_values[f].std(axis=(0, 2, 3))
