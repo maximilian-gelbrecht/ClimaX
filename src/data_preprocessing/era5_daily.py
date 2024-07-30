@@ -10,7 +10,7 @@ from climax.utils.data_utils import DEFAULT_PRESSURE_LEVELS, NAME_TO_VAR
 
 
 def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
-    os.makedirs(os.path.join(save_dir, partition), exist_ok=True)
+    os.makedirs(os.path.join(save_dir, "era5_daily"), exist_ok=True)
 
     era5_daily = xr.Dataset()
     for year in tqdm(years):
@@ -56,9 +56,9 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
 
     # Normalization
     if partition == "train":
-        normalize_mean = era5_daily.mean(dim="time")
-        normalize_std = era5_daily.std(dim="time")
-    
+        era5_daily.mean(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_mean.nc"))
+        era5_daily.std(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_std.nc"))
+
     # Add constants
     constants = xr.open_mfdataset(
         os.path.join(path, "constants/constants_5.625deg.nc"), combine="by_coords", parallel=True
@@ -66,6 +66,8 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
     for constant_field in ["land_sea_mask", "orography", "lattitude"]:
         code = NAME_TO_VAR[constant_field]
         era5_daily[code] = constants[code].expand_dims(dim={"time": era5_daily.time})
+
+    era5_daily.to_netcdf(os.path.join(save_dir, "era5_daily", f"{partition}.nc"))
 
 
 @click.command()
