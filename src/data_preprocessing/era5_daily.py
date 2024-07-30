@@ -54,6 +54,11 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
                     else:
                         era5_daily = era5_daily.merge(xr.Dataset({var_name: resampled}))
 
+    # Normalization
+    if partition == "train":
+        normalize_mean = era5_daily.mean(dim="time")
+        normalize_std = era5_daily.std(dim="time")
+    
     # Add constants
     constants = xr.open_mfdataset(
         os.path.join(path, "constants/constants_5.625deg.nc"), combine="by_coords", parallel=True
@@ -111,13 +116,13 @@ def main(
     era5_daily(root_dir, variables, val_years, save_dir, "val", aggregation)
     era5_daily(root_dir, variables, test_years, save_dir, "test", aggregation)
 
-    # save lat and lon data
-    ps = glob.glob(os.path.join(root_dir, variables[0], f"*{train_years[0]}*.nc"))
-    x = xr.open_mfdataset(ps[0], parallel=True)
-    lat = x["lat"].to_numpy()
-    lon = x["lon"].to_numpy()
-    np.save(os.path.join(save_dir, "lat.npy"), lat)
-    np.save(os.path.join(save_dir, "lon.npy"), lon)
+    # # save lat and lon data
+    # ps = glob.glob(os.path.join(root_dir, variables[0], f"*{train_years[0]}*.nc"))
+    # x = xr.open_mfdataset(ps[0], parallel=True)
+    # lat = x["lat"].to_numpy()
+    # lon = x["lon"].to_numpy()
+    # np.save(os.path.join(save_dir, "lat.npy"), lat)
+    # np.save(os.path.join(save_dir, "lon.npy"), lon)
 
 
 if __name__ == "__main__":
