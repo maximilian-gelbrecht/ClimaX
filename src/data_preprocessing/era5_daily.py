@@ -71,8 +71,8 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
 
 
 @click.command()
-@click.option("--root_dir", type=click.Path(exists=True))
-@click.option("--save_dir", type=str)
+@click.option("--root-dir", type=click.Path(exists=True))
+@click.option("--save-dir", type=str)
 @click.option(
     "--variables",
     "-v",
@@ -92,10 +92,10 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
         "specific_humidity",
     ],
 )
-@click.option("--start_train_year", type=int, default=1979)
-@click.option("--start_val_year", type=int, default=2016)
-@click.option("--start_test_year", type=int, default=2017)
-@click.option("--end_year", type=int, default=2019)
+@click.option("--start-train-year", type=int, default=1979)
+@click.option("--start-val-year", type=int, default=2016)
+@click.option("--start-test-year", type=int, default=2017)
+@click.option("--end-year", type=int, default=2019)
 @click.option("--aggregation", type=str, default="mean")
 def main(
     root_dir,
