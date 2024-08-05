@@ -9,13 +9,14 @@ from tqdm import tqdm
 from climax.utils.data_utils import DEFAULT_PRESSURE_LEVELS, NAME_TO_VAR
 
 
-def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
+def era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation_mode):
+    assert end_year > start_year
     os.makedirs(os.path.join(save_dir, "era5_daily"), exist_ok=True)
 
     era5_daily = xr.Dataset()
-    for year in tqdm(years):
+    for year in tqdm(range(start_year, end_year + 1)):
         for var in variables:
-            ps = glob.glob(os.path.join(path, var, f"*{year}*.nc"))
+            ps = glob.glob(os.path.join(data_dir, var, f"*{year}*.nc"))
             dataset = xr.open_mfdataset(
                 ps, combine="by_coords", parallel=True
             )  # dataset for a single variable and year
@@ -54,24 +55,24 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
                     else:
                         era5_daily = era5_daily.merge(xr.Dataset({var_name: resampled}))
 
-    # Normalization
-    if partition == "train":
-        era5_daily.mean(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_mean.nc"))
-        era5_daily.std(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_std.nc"))
+    # # Normalization
+    # if partition == "train":
+    #     era5_daily.mean(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_mean.nc"))
+    #     era5_daily.std(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_std.nc"))
 
     # Add constants
     constants = xr.open_mfdataset(
-        os.path.join(path, "constants/constants_5.625deg.nc"), combine="by_coords", parallel=True
+        os.path.join(data_dir, "constants/constants_5.625deg.nc"), combine="by_coords", parallel=True
     )
     for constant_field in ["land_sea_mask", "orography", "lattitude"]:
         code = NAME_TO_VAR[constant_field]
         era5_daily[code] = constants[code].expand_dims(dim={"time": era5_daily.time})
 
-    era5_daily.to_netcdf(os.path.join(save_dir, "era5_daily", f"{partition}.nc"))
+    era5_daily.to_netcdf(os.path.join(save_dir, "era5_daily.nc"))
 
 
 @click.command()
-@click.option("--root-dir", type=click.Path(exists=True))
+@click.option("--data-dir", type=click.Path(exists=True))
 @click.option("--save-dir", type=str)
 @click.option(
     "--variables",
@@ -92,39 +93,18 @@ def era5_daily(path, variables, years, save_dir, partition, aggregation_mode):
         "specific_humidity",
     ],
 )
-@click.option("--start-train-year", type=int, default=1979)
-@click.option("--start-val-year", type=int, default=2016)
-@click.option("--start-test-year", type=int, default=2017)
+@click.option("--start-year", type=int, default=1979)
 @click.option("--end-year", type=int, default=2019)
 @click.option("--aggregation", type=str, default="mean")
 def main(
-    root_dir,
+    data_dir,
     save_dir,
     variables,
-    start_train_year,
-    start_val_year,
-    start_test_year,
+    start_year,
     end_year,
     aggregation,
 ):
-    assert start_val_year > start_train_year and start_test_year > start_val_year and end_year > start_test_year
-    train_years = range(start_train_year, start_val_year)
-    val_years = range(start_val_year, start_test_year)
-    test_years = range(start_test_year, end_year)
-
-    os.makedirs(save_dir, exist_ok=True)
-
-    era5_daily(root_dir, variables, train_years, save_dir, "train", aggregation)
-    era5_daily(root_dir, variables, val_years, save_dir, "val", aggregation)
-    era5_daily(root_dir, variables, test_years, save_dir, "test", aggregation)
-
-    # # save lat and lon data
-    # ps = glob.glob(os.path.join(root_dir, variables[0], f"*{train_years[0]}*.nc"))
-    # x = xr.open_mfdataset(ps[0], parallel=True)
-    # lat = x["lat"].to_numpy()
-    # lon = x["lon"].to_numpy()
-    # np.save(os.path.join(save_dir, "lat.npy"), lat)
-    # np.save(os.path.join(save_dir, "lon.npy"), lon)
+    era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation)
 
 
 if __name__ == "__main__":
