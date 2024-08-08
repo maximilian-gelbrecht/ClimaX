@@ -68,8 +68,8 @@ class ENSODataModule(LightningDataModule):
         leadtime = timedelta(
             days=self.forecast_lead_time
         )  # TODO: throw error if start_date - leadtime is before the first date in the dataset
-        era5 = era5_dataset.sel(time=slice(start_date, end_date)).to_array().to_numpy()
-        enso = enso_dataset.sel(time=slice(start_date - leadtime, end_date - leadtime)).to_array().squeeze().to_numpy()
+        era5 = era5_dataset.sel(time=slice(start_date - leadtime, end_date - leadtime)).to_array().to_numpy()
+        enso = enso_dataset.sel(time=slice(start_date, end_date)).to_array().squeeze().to_numpy()
         lat = era5_dataset.lat.to_numpy()
         lon = era5_dataset.lon.to_numpy()
         return ENSODataset(era5, enso, lat, lon)
