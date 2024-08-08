@@ -56,6 +56,7 @@ def enso_daily(
             .sel(latitude=slice(max_lat, min_lat), longitude=slice(min_lon, max_lon))
             .resample(time="1D")
             .mean("time")
+            .load()  # Load to avoid out-of-order index warning
         )
 
     # merge daily_sst_box into one xarray dataset
