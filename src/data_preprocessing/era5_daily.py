@@ -11,10 +11,10 @@ from climax.utils.data_utils import DEFAULT_PRESSURE_LEVELS, NAME_TO_VAR
 
 def era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation_mode):
     assert end_year > start_year
-    os.makedirs(os.path.join(save_dir, "era5_daily"), exist_ok=True)
 
-    era5_daily = xr.Dataset()
+    data_by_year = []
     for year in tqdm(range(start_year, end_year + 1)):
+        data_by_var = []
         for var in variables:
             ps = glob.glob(os.path.join(data_dir, var, f"*{year}*.nc"))
             dataset = xr.open_mfdataset(
@@ -29,10 +29,7 @@ def era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation_
                 elif aggregation_mode == "snapshot":
                     resampled = dataset[code][::24]
 
-                if code not in era5_daily:
-                    era5_daily[code] = resampled
-                else:
-                    era5_daily = era5_daily.merge(xr.Dataset({code: resampled}))
+                data_by_var.append(resampled)
 
             else:  # multiple-level variables, only use a subset
                 assert len(dataset[code].shape) == 4
@@ -40,20 +37,23 @@ def era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation_
                 all_levels = np.intersect1d(all_levels, DEFAULT_PRESSURE_LEVELS)
 
                 for level in all_levels:
-                    ds_level = dataset.sel(level=[level]).squeeze(drop=True)
+                    var_name = f"{code}_{level}"
+                    ds_level = dataset.sel(level=[level]).squeeze(drop=True).rename({code: var_name})
 
                     # aggregate to daily data, either by just taking one snapshot or by taking a mean
-                    var_name = f"{code}_{level}"
-
                     if aggregation_mode == "mean":
-                        resampled = ds_level[code].resample(time="1D").mean("time")
+                        resampled = ds_level[var_name].resample(time="1D").mean("time")
                     elif aggregation_mode == "snapshot":
-                        resampled = ds_level[code][::24]
+                        resampled = ds_level[var_name][::24]
 
-                    if var_name not in era5_daily:
-                        era5_daily[var_name] = resampled
-                    else:
-                        era5_daily = era5_daily.merge(xr.Dataset({var_name: resampled}))
+                    data_by_var.append(resampled)
+
+        # Combine all vars into one dataset object
+        this_year_data = xr.merge(data_by_var, combine_attrs="drop")
+        data_by_year.append(this_year_data)
+
+    # Combine all years
+    era5_daily = xr.concat(data_by_year, dim="time")
 
     # Add constants
     constants = xr.open_mfdataset(
@@ -67,7 +67,11 @@ def era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation_
 
 
 @click.command()
-@click.option("--data-dir", type=click.Path(exists=True))
+@click.option(
+    "--data-dir",
+    type=click.Path(exists=True),
+    default="/p/projects/ou/labs/ai/reanalysis/era5/resolution_5625_weatherbench",
+)
 @click.option("--save-dir", type=str)
 @click.option(
     "--variables",
