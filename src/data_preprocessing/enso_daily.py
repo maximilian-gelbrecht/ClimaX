@@ -17,7 +17,7 @@ def enso_daily(
     normalize: bool = False,
     name_pattern_year_twice: bool = True,
 ):
-    """Computes a daily rolling mean ENSO index directly from netCDF Files and saves it as .npz files.
+    """Computes a daily rolling mean ENSO index directly from netCDF Files and saves it as a .nc file.
 
     Args:
         data_dir (str): path to the netCDF files
