@@ -55,11 +55,6 @@ def era5_daily(data_dir, save_dir, variables, start_year, end_year, aggregation_
                     else:
                         era5_daily = era5_daily.merge(xr.Dataset({var_name: resampled}))
 
-    # # Normalization
-    # if partition == "train":
-    #     era5_daily.mean(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_mean.nc"))
-    #     era5_daily.std(dim="time").to_netcdf(os.path.join(save_dir, "era5_daily", "normalize_std.nc"))
-
     # Add constants
     constants = xr.open_mfdataset(
         os.path.join(data_dir, "constants/constants_5.625deg.nc"), combine="by_coords", parallel=True
